@@ -11,8 +11,8 @@ namespace Xamarin.PropertyEditing.Mac
 {
 	internal class PointEditorControl : PropertyEditorControl
 	{
-		internal NSTextField XEditor { get; set; }
-		internal NSTextField YEditor { get; set; }
+		internal NumericSpinEditor XEditor { get; set; }
+		internal NumericSpinEditor YEditor { get; set; }
 
 		public override NSView FirstKeyView => XEditor;
 		public override NSView LastKeyView => YEditor;
@@ -26,32 +26,39 @@ namespace Xamarin.PropertyEditing.Mac
 		{
 			var xLabel = new UnfocusableTextField (new CGRect (0, 4, 25, 20), "X:");
 
-			XEditor = new NSTextField (new CGRect (25, 0, 50, 20));
+			XEditor = new NumericSpinEditor ();
+			XEditor.Frame = new CGRect (25, 0, 50, 20);
 			XEditor.BackgroundColor = NSColor.Clear;
 			XEditor.StringValue = string.Empty;
-			XEditor.Activated += (sender, e) => {
-				ViewModel.Value = new CGPoint (XEditor.IntValue, YEditor.IntValue);
+			XEditor.ValueChanged += (sender, e) => {
+				ViewModel.Value = new CGPoint (XEditor.Value, YEditor.Value);
 			};
 
 			var yLabel = new UnfocusableTextField (new CGRect (85, 4, 25, 20), "Y:");
 
-			YEditor = new NSTextField (new CGRect (110, 0, 50, 20));
+			YEditor = new NumericSpinEditor ();
+			YEditor.Frame = new CGRect (110, 0, 50, 20);
 			YEditor.BackgroundColor = NSColor.Clear;
 			YEditor.StringValue = string.Empty;
-			YEditor.Activated += (sender, e) => {
-				ViewModel.Value = new CGPoint (XEditor.IntValue, YEditor.IntValue);
+			YEditor.ValueChanged += (sender, e) => {
+				ViewModel.Value = new CGPoint (XEditor.Value, YEditor.Value);
 			};
 
 			AddSubview (xLabel);
 			AddSubview (XEditor);
 			AddSubview (yLabel);
 			AddSubview (YEditor);
+
+            this.DoConstraints ( new[] {
+				XEditor.ConstraintTo (this, (xe, c) => xe.Width == 50),
+				YEditor.ConstraintTo (this, (ye, c) => ye.Width == 50),
+			});
 		}
 
 		protected override void UpdateValue ()
 		{
-			XEditor.IntValue = (int)ViewModel.Value.X;
-			YEditor.IntValue = (int)ViewModel.Value.Y;
+			XEditor.Value = ViewModel.Value.X;
+			YEditor.Value = ViewModel.Value.Y;
 		}
 
 		protected override void HandleErrorsChanged (object sender, System.ComponentModel.DataErrorsChangedEventArgs e)

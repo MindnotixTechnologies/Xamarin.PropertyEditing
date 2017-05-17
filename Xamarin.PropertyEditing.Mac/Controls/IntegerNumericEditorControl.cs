@@ -11,12 +11,8 @@ namespace Xamarin.PropertyEditing.Mac
 			NumberStyle = NSNumberFormatterStyle.None;
 
 			// update the VM value
-			NumericEditor.Activated += (sender, e) => {
-				ViewModel.Value = NumericEditor.NIntValue;
-			};
-
-			Stepper.Activated += (s, e) => {
-				ViewModel.Value = Stepper.NIntValue;
+			NumericEditor.ValueChanged += (sender, e) => {
+				ViewModel.Value = (long)NumericEditor.Value;
 			};
 		}
 
@@ -27,8 +23,7 @@ namespace Xamarin.PropertyEditing.Mac
 
 		protected override void UpdateValue ()
 		{
-			Stepper.NIntValue = (nint)ViewModel.Value;
-			NumericEditor.NIntValue = (nint)ViewModel.Value;
+			NumericEditor.Value = ViewModel.Value;
 		}
 	}
 }
