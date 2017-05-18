@@ -106,5 +106,9 @@ namespace Xamarin.PropertyEditing.Mac
 			WidthEditor.Editable = ViewModel.Property.CanWrite;
 			HeightEditor.Editable = ViewModel.Property.CanWrite;
 		}
+
+		protected override void UpdateAccessibilityValues ()
+		{
+		}
 	}
 }

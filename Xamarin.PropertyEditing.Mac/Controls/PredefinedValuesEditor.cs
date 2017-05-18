@@ -84,5 +84,9 @@ namespace Xamarin.PropertyEditing.Mac
 		}
 
 		private readonly NSComboBox comboBox;
+
+		protected override void UpdateAccessibilityValues ()
+		{
+		}
 	}
 }
