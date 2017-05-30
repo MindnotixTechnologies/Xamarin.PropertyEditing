@@ -18,6 +18,7 @@ namespace Xamarin.PropertyEditing.ViewModels
 			: base (property, editors)
 		{
 			SetValueResourceCommand = new RelayCommand<Resource> (OnSetValueToResource, CanSetValueToResource);
+			ClearValueResourceCommand = new RelayCommand (OnClearValue, CanClearValue);
 		}
 
 		public ValueSource ValueSource => this.value.Source;
@@ -52,6 +53,11 @@ namespace Xamarin.PropertyEditing.ViewModels
 		}
 
 		public ICommand SetValueResourceCommand
+		{
+			get;
+		}
+
+		public ICommand ClearValueResourceCommand
 		{
 			get;
 		}
@@ -150,6 +156,9 @@ namespace Xamarin.PropertyEditing.ViewModels
 			this.value = newValue;
 			OnValueChanged ();
 			OnPropertyChanged (nameof (Value));
+
+			((RelayCommand) ClearValueResourceCommand)?.ChangeCanExecute ();
+
 			return true;
 		}
 
@@ -229,6 +238,19 @@ namespace Xamarin.PropertyEditing.ViewModels
 			}
 
 			((RelayCommand<Resource>)SetValueResourceCommand).ChangeCanExecute ();
+		}
+
+		private void OnClearValue ()
+		{
+			SetValue (new ValueInfo<TValue> {
+				Source = ValueSource.Default,
+				Value = default(TValue)
+			});
+		}
+
+		private bool CanClearValue ()
+		{
+			return (Property.ValueSources.HasFlag (ValueSources.Local) && Property.ValueSources.HasFlag (ValueSources.Default) && ValueSource == ValueSource.Local);
 		}
 	}
 
