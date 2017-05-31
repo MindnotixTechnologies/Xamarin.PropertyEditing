@@ -255,7 +255,7 @@ namespace Xamarin.PropertyEditing.ViewModels
 	}
 
 	internal abstract class PropertyViewModel
-		: ViewModelBase, INotifyDataErrorInfo
+		: NotifyingObject, INotifyDataErrorInfo
 	{
 		private ObjectViewModel valueModel;
 		private bool multipleValues;
