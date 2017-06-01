@@ -42,28 +42,33 @@ namespace Xamarin.PropertyEditing.Reflection
 
 		public bool CanWrite => this.propertyInfo.CanWrite;
 
-		public ValueSources ValueSources => ValueSources.Local;
+		public virtual ValueSources ValueSources => ValueSources.Local;
 
 		public IReadOnlyList<PropertyVariation> Variations => EmtpyVariations;
 
 		public IReadOnlyList<IAvailabilityConstraint> AvailabilityConstraints => EmptyConstraints;
 
-		public void SetValue<T> (object target, T value)
+		public void SetValue<T> (object target, ValueInfo<T> valueInfo)
 		{
-			object realValue = value;
+			object realValue = valueInfo.Value;
 			object converted;
-			if (TryConvertFromValue (value, out converted)) {
+			if (TryConvertFromValue (valueInfo.Value, out converted)) {
 				realValue = converted;
-			} else if (realValue != null && !this.propertyInfo.PropertyType.IsInstanceOfType (value)) {
-				realValue = Convert.ChangeType (value, this.propertyInfo.PropertyType);
+			} else if (realValue != null && !this.propertyInfo.PropertyType.IsInstanceOfType (valueInfo.Value)) {
+				realValue = Convert.ChangeType (valueInfo.Value, this.propertyInfo.PropertyType);
 			}
 
-			this.propertyInfo.SetValue (target, realValue);
+			SetValueCore (target, new ValueInfo<object> {
+				Source = valueInfo.Source,
+				Value = realValue,
+				ValueDescriptor = valueInfo.ValueDescriptor
+			});
 		}
 
-		public T GetValue<T> (object target)
+		public ValueInfo<T> GetValue<T> (object target)
 		{
-			object value = this.propertyInfo.GetValue (target);
+			ValueInfo<object> valueInfo = GetValueCore (target);
+			object value = valueInfo.Value;
 			T converted;
 			if (TryConvertToValue (value, out converted)) {
 				value = converted;
@@ -74,7 +79,11 @@ namespace Xamarin.PropertyEditing.Reflection
 					value = Convert.ChangeType (value, typeof(T));
 			}
 
-			return (T)value;
+			return new ValueInfo<T> {
+				Value = (T)value,
+				Source = valueInfo.Source,
+				ValueDescriptor = valueInfo.ValueDescriptor
+			};
 		}
 
 		public bool Equals (ReflectionPropertyInfo other)
@@ -112,6 +121,19 @@ namespace Xamarin.PropertyEditing.Reflection
 		public static bool operator != (ReflectionPropertyInfo left, ReflectionPropertyInfo right)
 		{
 			return !Equals (left, right);
+		}
+
+		protected virtual ValueInfo<object> GetValueCore (object target)
+		{
+			return new ValueInfo<object> {
+				Value = this.propertyInfo.GetValue (target),
+				Source = ValueSource.Local
+			};
+		}
+
+		protected virtual void SetValueCore (object target, ValueInfo<object> realValue)
+		{
+			this.propertyInfo.SetValue (target, realValue.Value);
 		}
 
 		private readonly Lazy<List<TypeConverter>> typeConverter;
