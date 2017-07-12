@@ -8,12 +8,22 @@ using AppKit;
 using CoreGraphics;
 
 using Xamarin.PropertyEditing.ViewModels;
+using System.Collections.Generic;
+using ObjCRuntime;
+using System.Linq;
+using System.Collections.ObjectModel;
 
 namespace Xamarin.PropertyEditing.Mac
 {
 	internal class PredefinedValuesEditor<T>
 		: PropertyEditorControl
 	{
+		const string setBezelColorSelector = "setBezelColor:";
+
+		private readonly NSComboBox comboBox;
+		List<NSButton> combinableList = new List<NSButton> ();
+		bool dataPopulated;
+
 		public PredefinedValuesEditor ()
 		{
 			base.TranslatesAutoresizingMaskIntoConstraints = false;
@@ -29,14 +39,8 @@ namespace Xamarin.PropertyEditing.Mac
 
 			this.comboBox.SelectionChanged += (sender, e) => {
 				EditorViewModel.ValueName = comboBox.SelectedValue.ToString ();
+				dataPopulated = false;
 			};
-
-			AddSubview (this.comboBox);
-
-			this.DoConstraints (new[] {
-				comboBox.ConstraintTo (this, (cb, c) => cb.Width == c.Width),
-				comboBox.ConstraintTo (this, (cb, c) => cb.Left == c.Left),
-			});
 		}
 
 		public override NSView FirstKeyView => this.comboBox;
@@ -57,32 +61,94 @@ namespace Xamarin.PropertyEditing.Mac
 		protected override void UpdateErrorsDisplayed (IEnumerable errors)
 		{
 			if (ViewModel.HasErrors) {
-				this.comboBox.BackgroundColor = NSColor.Red;
+				if (EditorViewModel.IsCombinable) {
+					foreach (var item in combinableList) {
+						if (item.RespondsToSelector (new Selector (setBezelColorSelector))) {
+							item.BezelColor = NSColor.Red;
+						}
+					}
+				} else {
+					this.comboBox.BackgroundColor = NSColor.Red;
+				}
+						    
 				Debug.WriteLine ("Your input triggered an error:");
 				foreach (var error in errors) {
 					Debug.WriteLine (error.ToString () + "\n");
 				}
 			} else {
-				comboBox.BackgroundColor = NSColor.Clear;
+				if (EditorViewModel.IsCombinable) {
+					foreach (var item in combinableList) {
+						if (item.RespondsToSelector (new Selector (setBezelColorSelector))) {
+							item.BezelColor = NSColor.Clear;
+						}
+					}
+				} else {
+					comboBox.BackgroundColor = NSColor.Clear;
+				}
 				SetEnabled ();
 			}
 		}
 
 		protected override void OnViewModelChanged (PropertyViewModel oldModel)
 		{
-			this.comboBox.RemoveAll ();
-			foreach (string item in EditorViewModel.PossibleValues) {
-				this.comboBox.Add (new NSString (item));
+			if (!dataPopulated) {
+				if (EditorViewModel.IsCombinable) {
+					combinableList.Clear ();
+
+					var top = 0;
+					foreach (var item in EditorViewModel.PossibleValues) {
+						var BooleanEditor = new NSButton (new CGRect (0, top, 200, 24)) { TranslatesAutoresizingMaskIntoConstraints = false };
+						BooleanEditor.SetButtonType (NSButtonType.Switch);
+						BooleanEditor.Title = item.Key;
+						BooleanEditor.State = item.Value ? NSCellStateValue.On : NSCellStateValue.Off;
+						BooleanEditor.Activated += BooleanEditor_Activated;
+
+						AddSubview (BooleanEditor);
+						combinableList.Add (BooleanEditor);
+						top += 24;
+					}
+
+					// Set our new RowHeight
+					RowHeight = top;
+				} else {
+					this.comboBox.RemoveAll ();
+
+					// Once the VM is loaded we need a one time population
+					foreach (var item in EditorViewModel.PossibleValues) {
+						this.comboBox.Add (new NSString (item.Key));
+					}
+
+					AddSubview (this.comboBox);
+
+					this.DoConstraints (new[] {
+						comboBox.ConstraintTo (this, (cb, c) => cb.Width == c.Width),
+						comboBox.ConstraintTo (this, (cb, c) => cb.Left == c.Left),
+					});
+				}
+
+				dataPopulated = true;
 			}
 
 			base.OnViewModelChanged (oldModel);
 		}
 
-		protected override void UpdateValue ()
+		void BooleanEditor_Activated (object sender, EventArgs e)
 		{
-			this.comboBox.StringValue = EditorViewModel.ValueName ?? String.Empty;
+			var values = combinableList.Where (y => y.State == NSCellStateValue.On).Select (x => (T)Enum.Parse (EditorViewModel.Property.Type, x.Title)).ToList ().AsReadOnly ();
+
+			EditorViewModel.SetValue (EditorViewModel.Property.Type, values);
+			dataPopulated = false;
 		}
 
-		private readonly NSComboBox comboBox;
+		protected override void UpdateValue ()
+		{
+			if (EditorViewModel.IsCombinable) {
+				foreach (var item in combinableList) {
+					item.State = EditorViewModel.PossibleValues[item.Title] ? NSCellStateValue.On : NSCellStateValue.Off;
+				}
+			} else {
+				this.comboBox.StringValue = EditorViewModel.ValueName ?? String.Empty;
+			}
+		}
 	}
 }
