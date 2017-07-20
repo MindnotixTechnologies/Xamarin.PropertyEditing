@@ -1,0 +1,58 @@
+﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:local="clr-namespace:Xamarin.PropertyEditing.Windows"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:p="clr-namespace:Xamarin.PropertyEditing.Properties;assembly=Xamarin.PropertyEditing"
+                    xmlns:vm="clr-namespace:Xamarin.PropertyEditing.ViewModels;assembly=Xamarin.PropertyEditing"
+                    xmlns:system="clr-namespace:System;assembly=mscorlib">
+	<system:Double x:Key="MenuOffset">3</system:Double>
+
+	<Rectangle x:Shared="False" x:Key="LiteralMarker" Stroke="{DynamicResource PropertyButtonBorderBrush}" Fill="{DynamicResource LiteralMarkerBrush}" Height="12" Width="12" StrokeThickness="1" />
+	
+	<Style TargetType="local:PropertyButton">
+		<Setter Property="Background" Value="Transparent" />
+		<Setter Property="BorderThickness" Value="0" />
+		<Setter Property="Height" Value="17" />
+		<Setter Property="Width" Value="11" />
+		<Setter Property="SnapsToDevicePixels" Value="True" />
+		<Setter Property="MenuTemplate">
+			<Setter.Value>
+				<DataTemplate>
+					<local:HeaderedContextMenu Header="{Binding Property.Name,Mode=OneTime}" StaysOpen="True" Placement="Left" HorizontalOffset="{StaticResource MenuOffset}" VerticalOffset="{StaticResource MenuOffset}">
+						<MenuItem x:Name="CustomExpressionItem" Header="{x:Static p:Resources.CustomExpressionEllipse}" />
+						<Separator />
+						<MenuItem Header="{x:Static p:Resources.Reset}" Icon="{StaticResource LiteralMarker}" Command="{Binding ResetValueCommand,Mode=OneTime}" />
+						<MenuItem Header="{x:Static p:Resources.ConvertToLocalValue}" Icon="{StaticResource LiteralMarker}" Command="{Binding ConvertToLocalValueCommand,Mode=OneTime}" />
+						<!--
+						<Separator />
+						<MenuItem Header="{x:Static p:Resources.LocalResource}" />
+						<MenuItem Header="{x:Static p:Resources.SystemResource}" />
+						<MenuItem Header="{x:Static p:Resources.EditResourceEllipse}" />
+						<MenuItem Header="{x:Static p:Resources.ConvertToNewResourceEllipse}" />
+						<Separator />
+						<MenuItem Header="{x:Static p:Resources.CreateDataBindingEllipse}" />
+						<MenuItem Header="{x:Static p:Resources.TemplateBinding}" />
+						<Separator />
+						<MenuItem Header="{x:Static p:Resources.RecordCurrentValue}" />
+						<MenuItem Header="{x:Static p:Resources.GoToSource}" />!-->
+					</local:HeaderedContextMenu>
+				</DataTemplate>
+			</Setter.Value>
+		</Setter>
+		<Setter Property="Template">
+			<Setter.Value>
+				<ControlTemplate TargetType="local:PropertyButton">
+					<Border Name="Border" BorderThickness="{TemplateBinding BorderThickness}" BorderBrush="{TemplateBinding BorderBrush}" Background="{TemplateBinding Background}">
+						<Rectangle Name="Indicator" Stroke="{DynamicResource PropertyButtonBorderBrush}" Height="7" Width="7" />
+					</Border>
+				</ControlTemplate>
+			</Setter.Value>
+		</Setter>
+		<Style.Triggers>
+			<Trigger Property="IsMouseOver" Value="True">
+				<Trigger.Setters>
+					<Setter Property="Background" Value="{DynamicResource HoverBrush}" />
+				</Trigger.Setters>
+			</Trigger>
+		</Style.Triggers>
+	</Style>
+</ResourceDictionary>
